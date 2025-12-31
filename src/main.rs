@@ -1,49 +1,93 @@
+// vibed
 mod trie;
-use trie::{Trie, OpTN};
+mod db;
+mod manager;
+use std::io::{self, Write};
 
-fn main() {
-    let mut trie = Trie::new();
+use crate::manager::TrieManager;
+
+fn main() -> rusqlite::Result<()> {
+    println!("🌲 Trie Manager with SQLite");
+    println!("============================\n");
     
-    // Test 1: Basic insertions
-    println!("=== Basic Insertions ===");
-    assert!(trie.insert("cat"));
-    assert!(trie.insert("car"));
-    assert!(trie.insert("care"));
-    assert!(trie.insert("bombshell"));
-    println!("Inserted: cat, car, care");
+    // Initialize with database
+    let mut manager = TrieManager::new("dictionary.db")?;
     
-    // Test 2: Find existing words
-    println!("\n=== Find Tests ===");
-    assert!(trie.find("cat").is_word());
-    assert!(trie.find("car").is_word());
-    assert!(trie.find("care").is_word());
-    assert!(!trie.find("ca").is_word());  // prefix, not word
-    println!("Find tests passed");
+    println!("Dictionary loaded with {} words\n", manager.db.word_count()?);
     
-    // Test 3: Prefix clearing (key feature!)
-    println!("\n=== Test get_all_words ===");
-    let ca_words = trie.find("ca").get_all_words();
-    let all_words = trie.find("").get_all_words();
-    println!("All words from root: {:?}", all_words);
-    println!("All words from ca: {:?}", ca_words);
+    // Interactive loop
+    loop {
+        print!("\nCommands: [a]dd, [s]earch, [c]omplete, [l]ist, [q]uit\n> ");
+        io::stdout().flush().unwrap();
+        
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        let input = input.trim();
+        
+        match input.chars().next() {
+            Some('a') => {
+                print!("Enter word to add: ");
+                io::stdout().flush().unwrap();
+                let mut word = String::new();
+                io::stdin().read_line(&mut word).unwrap();
+                let word = word.trim();
+                
+                if manager.add_word(word)? {
+                    println!("✓ Added '{}'", word);
+                } else {
+                    println!("ℹ '{}' already exists", word);
+                }
+            }
+            
+            Some('s') => {
+                print!("Enter word to search: ");
+                io::stdout().flush().unwrap();
+                let mut word = String::new();
+                io::stdin().read_line(&mut word).unwrap();
+                let word = word.trim();
+                
+                if manager.contains(word) {
+                    println!("✓ '{}' exists in dictionary", word);
+                } else {
+                    println!("✗ '{}' not found", word);
+                }
+            }
+            
+            Some('c') => {
+                print!("Enter prefix to complete: ");
+                io::stdout().flush().unwrap();
+                let mut prefix = String::new();
+                io::stdin().read_line(&mut prefix).unwrap();
+                let prefix = prefix.trim();
+                
+                let completions = manager.complete(prefix);
+                if completions.is_empty() {
+                    println!("No completions found");
+                } else {
+                    println!("Found {} completions:", completions.len());
+                    for (i, word) in completions.iter().take(20).enumerate() {
+                        println!("  {}. {}", i + 1, word);
+                    }
+                    if completions.len() > 20 {
+                        println!("  ... and {} more", completions.len() - 20);
+                    }
+                }
+            }
+            
+            Some('l') => {
+                manager.trie.debug();
+            }
+            
+            Some('q') => {
+                println!("Goodbye!");
+                break;
+            }
+            
+            _ => {
+                println!("Unknown command");
+            }
+        }
+    }
     
-    // Test 4: Duplicates
-    println!("\n=== Duplicate Test ===");
-    assert!(!trie.insert("cat"));  // Already exists
-    println!("Duplicate handling passed");
-    
-    // Test 5: Edge cases
-    println!("\n=== Edge Cases ===");
-    let mut empty_trie = Trie::new();
-    assert!(empty_trie.insert(""));  // empty word
-    assert!(empty_trie.find("").is_some());
-    
-    assert!(trie.insert(""));  // empty in full trie
-    println!("Edge cases passed");
-    
-    // // Test 6: Print trie (dbg helper)
-    // println!("\n=== Trie Debug ===");
-    // println!("{:#?}", trie);
-    
-    println!("\n🎉 All tests passed! Trie works perfectly.");
+    Ok(())
 }

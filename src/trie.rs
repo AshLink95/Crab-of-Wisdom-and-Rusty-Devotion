@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
 /// Trie structure
-#[derive(Default, Debug)]
 pub struct Trie { root: TrieNode, }
 
 /// Node of a Trie structure
-#[derive(Default, Debug)]
 pub struct TrieNode {
+    key: char,
     children: HashMap<char, TrieNode>,
     is_word: bool,
     is_end: bool
@@ -14,7 +13,8 @@ pub struct TrieNode {
 
 impl Trie {
     pub fn new() -> Self {
-        Self { root: TrieNode{
+        Self { root: TrieNode {
+            key: '\0',
             children: HashMap::new(),
             is_word: false,
             is_end: false
@@ -36,13 +36,50 @@ impl Trie {
         let mut predecessor = &mut self.root;
         let mut end = false;
         for c in word.chars() {
-            predecessor = predecessor.children.entry(c).or_default();
+            predecessor = predecessor.children.entry(c).or_insert_with(||
+                TrieNode {
+                    key: c,
+                    children: HashMap::new(),
+                    is_word: false, is_end: false
+                });
             end = predecessor.is_end;
             predecessor.is_end = false;
         }
         predecessor.is_end = true;
         predecessor.is_word = true;
         !end
+    }
+
+    pub fn debug(&self) {
+        fn depth_first(node: &TrieNode, prefix: String, is_last: bool) {
+            // Don't print anything for the root node (empty key)
+            if node.key != '\0' {
+                print!("{}", prefix);
+                print!("{}", if is_last { "└─" } else { "├─" });
+                print!("{}", node.key);
+                if node.is_word {
+                    print!("]");
+                }
+                println!();
+            }
+            
+            let children: Vec<_> = node.children.values().collect();
+            let child_count = children.len();
+            
+            for (i, child) in children.iter().enumerate() {
+                let is_last_child = i == child_count - 1;
+                let new_prefix = if node.key == '\0' {
+                    // Root level - no prefix
+                    String::new()
+                } else {
+                    // Add to prefix based on whether parent was last
+                    format!("{}{}  ", prefix, if is_last { "" } else { "│" })
+                };
+                depth_first(child, new_prefix, is_last_child);
+            }
+        }
+        
+        depth_first(&self.root, String::new(), true);
     }
 }
 
@@ -87,4 +124,30 @@ impl OpTN for Option<&TrieNode>{
 
 }
 
-// TODO: make macros for: trie creation, bulk insertion and debug printer
+// Quick Trie Creation macro
+#[macro_export]
+macro_rules! trie {
+    ( $($x: expr),* $(,)? ) => {
+        {
+            let mut temp_trie = Trie::new();
+            $(
+                temp_trie.insert($x);
+            )*
+            temp_trie
+        }
+    };
+}
+
+// Trie Bulk Insertion macro
+#[macro_export]
+macro_rules! trie_bulk_insert {
+    ( $trie:expr, $($x: expr),* $(,)? ) => {
+        {
+            let mut bulk_ret = true;
+            $(
+                bulk_ret = bulk_ret && $trie.insert($x);
+            )*
+            bulk_ret
+        }
+    };
+}
