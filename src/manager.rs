@@ -21,7 +21,7 @@ impl TrieManager {
         
         Ok(Self { trie, db })
     }
-    
+
     // Fast lookup using in-memory trie
     pub fn complete(&self, prefix: &str) -> Vec<String> {
         match self.trie.find(prefix) {
@@ -34,14 +34,14 @@ impl TrieManager {
             None => vec![]
         }
     }
-    
+
     // Add word to both trie and DB
     pub fn add_word(&mut self, word: &str) -> rusqlite::Result<bool> {
         let inserted = self.trie.insert(word);
         self.db.insert_word(word)?;
         Ok(inserted)
     }
-    
+
     // Check if word exists (fast, uses trie)
     pub fn contains(&self, word: &str) -> bool {
         self.trie.find(word).is_word()

@@ -1,5 +1,7 @@
 /target
 insert_english.sql
-dictionary.db
+coward.db
 forkREADME.md
 Cargo.lock
+cowardCLI
+perpPlan.md

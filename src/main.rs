@@ -2,23 +2,22 @@
 mod trie;
 mod db;
 mod manager;
-mod load_english;
 use std::io::{self, Write};
 
 use crate::manager::TrieManager;
 
 fn main() -> rusqlite::Result<()> {
-    println!("🌲 Trie Manager with Rust and SQLite");
-    println!("====================================\n");
+    println!("🦀 Crab of Wisdom a Rusty Devotion CLI Manager 🦀");
+    println!("=================================================\n");
     
     // Initialize with database
-    let mut manager = TrieManager::new("dictionary.db")?;
+    let mut manager = TrieManager::new(db::DB_PATH)?;
     
     println!("Dictionary loaded with {} words\n", manager.db.word_count()?);
     
     // Interactive loop
     loop {
-        print!("\nCommands: [a]dd, [s]earch, [c]omplete, [l]ist, [q]uit\n> ");
+        print!("\nCommands: [a]dd, [s]earch, [c]omplete, [l]ist (debug), [q]uit\n> ");
         io::stdout().flush().unwrap();
         
         let mut input = String::new();

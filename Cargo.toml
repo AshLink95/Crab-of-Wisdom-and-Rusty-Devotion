@@ -4,4 +4,22 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+mlua = { version = "0.11.5", features = ["luajit", "module"] }
 rusqlite = "0.38.0"
+
+[lib]
+name = "coward"
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "coward"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "s" #3 for speed, "z" for size
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+strip = true
+
+# RUSTFLAGS="-C target-cpu=native -C force-frame-pointers=no" cargo build --release

@@ -5,6 +5,8 @@ pub struct TrieDB {
     conn: Connection,
 }
 
+pub const DB_PATH: &str = "coward.db";
+
 impl TrieDB {
     pub fn new(path: &str) -> Result<Self> {
         let conn = Connection::open(path)?;
